@@ -4,53 +4,79 @@ var video = document.createElement("video");
 var mediaRecorder;
 var isRecord = false;
 
+const changeStop = ()=>{
+    chrome.browserAction.setIcon({path:'./img/stop.png'})
+}
 
+const changeStart = ()=>[
+    chrome.browserAction.setIcon({path:'./img/start.png'})
+]
 chrome.browserAction.onClicked.addListener(function(){
     if(!isRecord){
         isRecord = !isRecord;
         //这地方应该是异步修改图标
-        chrome.browserAction.setIcon({path:'./img/stop.png'})
+        changeStop();
+        chrome.runtime.sendMessage({type:'request-audio'})
         return init()
     }else{
         isRecord = !isRecord;
-        chrome.browserAction.setIcon({path:'./img/start.png'})
+        changeStart();
         return mediaRecorder.stop();
     }
 });
+ 
 
 //https://developer.mozilla.org/en-US/docs/Web/API/Screen_Capture_API
 
 
 async function init(){
-    //声音会undefined
- 
-    // let audioStream = await navigator.mediaDevices.getUserMedia({video: false,audio: true});     
-    let stream = await navigator.mediaDevices.getDisplayMedia({video: true,audio: true});
-    if ("srcObject" in video) {
-        video.srcObject = stream
-    }else{
-        video.src = window.URL && window.URL.createObjectURL(stream) || stream
+    //获取可用设备列表
+    let devices = await navigator.mediaDevices.enumerateDevices();
+    let audioStream;
+    let stream;
+    //提示用户选择显示器或显示器的一部分（例如窗口）以捕获为MediaStream 以便共享或记录。返回解析为MediaStream的Promise。
+    //这个想当于只打开了录屏 没有打开录音功能
+    // audioStream = await navigator.mediaDevices.getUserMedia({audio:true})
+    try{
+        stream = await navigator.mediaDevices.getDisplayMedia({video: true,audio: true});
+    }catch{
+        isRecord = false;
+        changeStart();
     }
- 
-    // stream.getVideoTracks().forEach(value => audioStream.addTrack(value));
+    console.log(stream)
+    if(stream){
+        if ("srcObject" in video) {
+            video.srcObject = stream
+        }else{
+            video.src = window.URL && window.URL.createObjectURL(stream) || stream
+        }
 
-    // mediaRecorder = new MediaRecorder(audioStream,{type: "video/webm"})
-    mediaRecorder = new MediaRecorder(stream,{type: "video/webm"}),
-        chunks = [];
-    console.log(video,mediaRecorder)
- 
-    mediaRecorder.start();
-    mediaRecorder.ondataavailable = function(e){ 
-        chunks.push(e.data);
-    };
-    mediaRecorder.onstop = function(){ 
-        chrome.browserAction.setIcon({path:'./img/start.png'})
-        handleStop(chunks);
-    };
+        
+         stream.getVideoTracks().forEach(value => audioStream.addTrack(value));
+        
+        // mediaRecorder = new MediaRecorder(audioStream,{type: "video/webm"});
+        let  chunks = []
+        let mediaConstraints = {
+            mimeType: 'video/webm;codecs=vp8,opus'
+            // ,bitsPerSecond:1000
+        }
+        mediaRecorder = new MediaRecorder(stream,mediaConstraints),
+            // chunks = [];
+    
+        mediaRecorder.start();
+        mediaRecorder.ondataavailable = function(e){ 
+            chunks.push(e.data);
+        };
+        mediaRecorder.onstop = function(){ 
+            chrome.browserAction.setIcon({path:'./img/start.png'})
+            handleStop(chunks);
+        };
 
-    // stop.onclick =  function(){ 
-    //     mediaRecorder.stop();
-    // };
+        // stop.onclick =  function(){ 
+        //     mediaRecorder.stop();
+        // };
+    }
+
  
 }
  

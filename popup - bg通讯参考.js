@@ -15,7 +15,7 @@ console.log('=----',video,start,stop,showVideo)
 //     })
 // })
 
- 
+
 
 chrome.browserAction.onClicked.addListener(function(){
     if(!isRecord){
