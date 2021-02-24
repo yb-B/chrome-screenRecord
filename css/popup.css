@@ -1,0 +1,44 @@
+body, html {
+    margin: 0px;
+    width: 314px;
+    height: 205px;
+    font-weight: 900;
+    background-color: #FFF;
+}
+.record-start{
+    background-color: rgb(8, 117, 219) !important;
+}
+
+.record-ing{
+    background-color: rgb(119, 188, 252) !important;
+}
+
+.record-ing::after{
+    content: "...";
+    
+}
+.pop-up{
+    display: flex;
+    flex-direction: column;
+    justify-items: center;
+    align-items: center;
+
+}
+
+.pop-up >div{
+    margin: 10px;
+}
+
+.pop-up > .is-hidden{
+    display: none;
+}
+.pop-up > .btn{
+    background-color: rgb(119, 188, 252);
+    width: 40%;
+    color: #FFF;
+    text-align: center;
+
+    padding: 10px 2px ;
+    border-radius: 10px;
+}
+
