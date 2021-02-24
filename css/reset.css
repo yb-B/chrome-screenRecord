@@ -1,0 +1,9 @@
+body, html {
+    margin: 0px;
+    width: 314px;
+    height: 205px;
+    font-size: 16px;
+    font-weight: 900;
+    box-sizing: content-box;
+    background-color: #FFF;
+}

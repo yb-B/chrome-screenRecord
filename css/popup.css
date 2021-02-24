@@ -1,10 +1,4 @@
-body, html {
-    margin: 0px;
-    width: 314px;
-    height: 205px;
-    font-weight: 900;
-    background-color: #FFF;
-}
+
 .record-start{
     background-color: rgb(8, 117, 219) !important;
 }

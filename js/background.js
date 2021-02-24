@@ -7,8 +7,9 @@ var mediaRecorder;
 var isRecord = false;
 var micstream;
 var micsource;
- 
+var recorderURL;
 var output = new MediaStream();
+
 
 const changeStop = () => {
     chrome.browserAction.setIcon({ path: './img/stop.png' })
@@ -18,9 +19,10 @@ const changeStart = () => [
     chrome.browserAction.setIcon({ path: './img/start.png' })
 ]
 
-function saveRecording(recordedBlobs) {
+function saveRecording(chunks){ 
+    // var recordedBlobs = new Blob(chunks, { 'type': 'video/mp4' });
     newwindow = window.open('../html/videoview.html');
-    newwindow.recordedBlobs = recordedBlobs;
+    newwindow.recordedChunks = chunks;
 }
 chrome.browserAction.onClicked.addListener(function () {
     if (!isRecord) {
@@ -30,19 +32,6 @@ chrome.browserAction.onClicked.addListener(function () {
     }
 });
 
-// chrome.runtime.onMessage.addListener(
-//     function(request,sender,sendResponse){
-//         if(request.type == 'record-start'){
-//             init();
-//         }
-//         if(request.type == 'record-end'){
-//             recordStop();
-//         }
-//     }
-// )
-//https://developer.mozilla.org/en-US/docs/Web/API/Screen_Capture_API
-
- 
 
 
 async function init() {
@@ -89,18 +78,20 @@ async function init() {
         };
         mediaRecorder.onstop = function () {
             isRecord = !isRecord;
-            console.log(stream.active)
             changeStart();
             micstream.getTracks().forEach(function (track) {
                 track.stop();
             });
+ 
             chrome.browserAction.setIcon({ path: './img/start.png' })
-            handleSave(chunks);
+            openRecorder(chunks);
+            // saveRecording(chunks);
+            reset();
         };
+
         videoSrc(output)
     } catch (e) {
-        console.log(e)
-        isRecord = false;
+        reset()
         changeStart();
     }
 
@@ -114,28 +105,72 @@ function videoSrc(stream){
     }
 }
 function recordStop(){
-    mediaRecorder.stop();
+    (mediaRecorder.state == 'recording') &&
+     mediaRecorder.stop();
 
 }
-function handleSave(chunks) {
+
+/**
+ * 
+ * @param {*} chunks 
+ * 
+ * 打开浏览录制回放的页面 并把Blob的url传过去
+ */
+function openRecorder(chunks) {
     var tracks = video.srcObject.getVideoTracks();
     tracks.forEach(track => track.stop());
     video.srcObject = null;
     var blob = new Blob(chunks, { 'type': 'video/mp4' });
     let myUrl = URL.createObjectURL(blob);
-    //下载blob只能通过 a标签点击实现
-    var link = document.createElement('a');
+    recorderURL = myUrl
+    newwindow = window.open('../html/videoview.html');
+    newwindow.recordedBlob = blob;
 
-    link.style.display = 'none';
-    link.href = myUrl;
-    link.setAttribute('download', 'record.mp4');
-    document.body.appendChild(link);
-    link.click();
-    output = new MediaStream();
+    //下载blob只能通过 a标签点击实现
+
+    // var link = document.createElement('a');
+
+    // link.style.display = 'none';
+    // link.href = myUrl;
+    // link.setAttribute('download', 'record.mp4');
+    // document.body.appendChild(link);
+    // link.click();
 
 }
- 
+
+function saveRecorder(recorderURL){
+    if(recorderURL){
+        var link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = recorderURL;
+        link.setAttribute('download', 'record.mp4');
+        document.body.appendChild(link);
+        link.click();
+    }
+    reset();
+}
 
 function reset(){
     //在保存之后要将所有数据reset
+    newwindow = null;
+    isRecord = false;
+    micstream = null;
+    micsource = null;
+    recorderURL = null;
+    output = new MediaStream();
 }
+
+const createObjectURL = (blob)=>{
+    return window.URL.createObjectURL(blob)
+}
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    // if (request.type == "download") {
+    //     console.log(request)
+    //     let url = createObjectURL(request.blob)
+    //     saveRecorder(url)
+    // }
+    if (request.type == "reset") {
+        reset()
+    }
+});
