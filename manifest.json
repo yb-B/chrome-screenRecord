@@ -15,7 +15,7 @@
 
     "browser_action":{
         "default_icon":"img/start.png",
-        "default_title":"屏幕录制"
+        "default_title":"点击即可开始录制"
     },
     
     "content_scripts": [{

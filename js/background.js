@@ -21,6 +21,9 @@ const changeStart = () => [
 
 function saveRecording(chunks){ 
     // var recordedBlobs = new Blob(chunks, { 'type': 'video/mp4' });
+    if(newwindow){
+        newwindow.close();
+    }
     newwindow = window.open('../html/videoview.html');
     newwindow.recordedChunks = chunks;
 }
@@ -121,6 +124,7 @@ function openRecorder(chunks) {
     tracks.forEach(track => track.stop());
     video.srcObject = null;
     var blob = new Blob(chunks, { 'type': 'video/mp4' });
+    console.log(chunks)
     let myUrl = URL.createObjectURL(blob);
     recorderURL = myUrl
     newwindow = window.open('../html/videoview.html');
@@ -165,11 +169,6 @@ const createObjectURL = (blob)=>{
 }
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    // if (request.type == "download") {
-    //     console.log(request)
-    //     let url = createObjectURL(request.blob)
-    //     saveRecorder(url)
-    // }
     if (request.type == "reset") {
         reset()
     }
