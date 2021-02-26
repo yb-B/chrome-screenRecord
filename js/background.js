@@ -19,14 +19,6 @@ const changeStart = () => [
     chrome.browserAction.setIcon({ path: './img/start.png' })
 ]
 
-function saveRecording(chunks){ 
-    // var recordedBlobs = new Blob(chunks, { 'type': 'video/mp4' });
-    if(newwindow){
-        newwindow.close();
-    }
-    newwindow = window.open('../html/videoview.html');
-    newwindow.recordedChunks = chunks;
-}
 chrome.browserAction.onClicked.addListener(function () {
     if (!isRecord) {
         return init()
@@ -88,7 +80,6 @@ async function init() {
  
             chrome.browserAction.setIcon({ path: './img/start.png' })
             openRecorder(chunks);
-            // saveRecording(chunks);
             reset();
         };
 

@@ -4,9 +4,9 @@
     "version":"1.0.0",
     "description":"屏幕录制",
     "icons":{
-        "16":"img/stop.png",
-        "48":"img/stop.png",
-        "128":"img/stop.png"
+        "16":"img/start.png",
+        "48":"img/start.png",
+        "128":"img/start.png"
     },
 	"background":
 	{

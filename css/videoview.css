@@ -4,13 +4,15 @@
     height: 100vh;
     flex-direction: row;
     align-items: center;
-    background-color: aquamarine;
+    background-color: rgb(191, 250, 230);
 }
 
 .mb-1{
     margin-bottom: 10px;
 }
-
+.title{
+    font-size: 24px;
+}
 .video-review >.left-video{
 
     height: 100%;
@@ -24,7 +26,8 @@
 
 .btn{
     background-color: rgb(8, 117, 219);
-    width: 40%;
+    width: 10rem;
+    margin: 10px;
     color: #FFF;
     text-align: center;
     padding: 10px 2px ;
