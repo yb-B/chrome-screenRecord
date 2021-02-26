@@ -37,10 +37,10 @@
         this.ontimeupdate = () => {
           //ontimeupdate是个宏任务 
           //第一次执行之后，在执行都只执行这个函数体的内容
-          console.log('里面',video.currentTime)
+          // console.log('里面',video.currentTime)
           return;
         }
-        video.currentTime = 0.1; //解决进度条一开始不在 0 的位置
+        video.currentTime = 0.1; //设置为0会有BUG，所以先设置成0
         video.currentTime = 0;
       }
     }
