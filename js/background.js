@@ -27,20 +27,37 @@ chrome.browserAction.onClicked.addListener(function () {
     }
 });
 
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.type == "reset") {
+        reset()
+    }
+});
 
+function getMicDevices(){
+    var devices;
+    chrome.runtime.onConnect.addListener(function(port){
+        if(port.name === 'micdevices'){
+            port.onMessage.addListener(function(msg){
+                console.log('-->',msg.micdevices)
+                devices = msg.micdevices;
+            })
+        }
+    })
+    return devices;
+}
 
 async function init() {
     isRecord = !isRecord;
     changeStop();
     //获取可用设备列表
-    let devices = await navigator.mediaDevices.enumerateDevices();
-    
-    micdevices = devices.filter(m=>m.kind=='audioinput')
-    // console.log(micdevices)
+    let micdevices = getMicDevices();
+    console.log('为什么这个值不在',micdevices)
     // let audioStream;
+    //获取用户设备的时候如果不在content scrpt中iframe中获取出现notallowed报错 懒得解决了直接写default
     let constraints = {
         audio:{
-            deviceId:micdevices[1].deviceId
+            // deviceId:micdevices[0].deviceId
+            deviceId: "default"
         }
     }
     let stream;
@@ -145,6 +162,8 @@ function saveRecorder(recorderURL){
     reset();
 }
 
+
+
 function reset(){
     //在保存之后要将所有数据reset
     newwindow = null;
@@ -159,8 +178,4 @@ const createObjectURL = (blob)=>{
     return window.URL.createObjectURL(blob)
 }
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.type == "reset") {
-        reset()
-    }
-});
+
