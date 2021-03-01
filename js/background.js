@@ -7,9 +7,11 @@ var mediaRecorder;
 var isRecord = false;
 var micstream;
 var micsource;
+var micdevices; //content-script获取
 var recorderURL;
 var output = new MediaStream();
 
+var tabId; //获取当前打开页面id 
 
 const changeStop = () => {
     chrome.browserAction.setIcon({ path: './img/stop.png' })
@@ -19,13 +21,7 @@ const changeStart = () => [
     chrome.browserAction.setIcon({ path: './img/start.png' })
 ]
 
-chrome.browserAction.onClicked.addListener(function () {
-    if (!isRecord) {
-        return init()
-    } else {
-        return recordStop();
-    }
-});
+
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.type == "reset") {
@@ -33,45 +29,72 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     }
 });
 
-function getMicDevices(){
-    var devices;
-    chrome.runtime.onConnect.addListener(function(port){
-        if(port.name === 'micdevices'){
-            port.onMessage.addListener(function(msg){
-                console.log('-->',msg.micdevices)
-                devices = msg.micdevices;
-            })
-        }
-    })
-    return devices;
-}
 
-async function init() {
+function getId(){
+    chrome.tabs.query({
+        active:true,
+        currentWindow:true
+    },(tabs)=>{
+        console.log('tab id',tabs,tabs[0].id)
+        chrome.tabs.sendMessage(tabs[0].id,{
+            action:'getMic'
+        },
+        res=>{  
+            if(chrome.runtime.lastError){
+                console.log(tabs,'chrome.runtime.lastError')
+                setTimeout(getId,1000)
+            }
+            console.log('res',res)
+            if(res){
+                micdevices = JSON.parse(res)
+                init(micdevices);
+            }
+        })
+    })
+}
+chrome.browserAction.onClicked.addListener(function () {
+    if (!isRecord) {
+        return getId();
+        // return init();
+    } else {
+        return recordStop();
+    }
+});
+
+// function getMicDevices(){
+//     var devices;
+//     chrome.runtime.onConnect.addListener(function(port){
+//         if(port.name === 'micdevices'){
+//             port.onMessage.addListener(function(msg){
+//                 console.log('-->',msg.micdevices)
+//                 devices = msg.micdevices;
+//             })
+//         }
+//     })
+//     return devices;
+// }
+
+async function init(micdevices) {
     isRecord = !isRecord;
     changeStop();
-    //获取可用设备列表
-    let micdevices = getMicDevices();
-    console.log('为什么这个值不在',micdevices)
-    // let audioStream;
-    //获取用户设备的时候如果不在content scrpt中iframe中获取出现notallowed报错 懒得解决了直接写default
-    let constraints = {
-        audio:{
-            // deviceId:micdevices[0].deviceId
-            deviceId: "default"
-        }
-    }
-    let stream;
-    //提示用户选择显示器或显示器的一部分（例如窗口）以捕获为MediaStream 以便共享或记录。返回解析为MediaStream的Promise。
+
     try {
+        // console.log('micdevices',micdevices)
+        let constraints = {
+            audio:{
+                // deviceId:micdevices[0].deviceId
+                deviceId: "default"
+            }
+        }
+        let stream;
+        console.log(micdevices)
         const mic = await navigator.mediaDevices.getUserMedia(constraints);
         micstream = mic;
         micsource = audioCtx.createMediaStreamSource(mic); //创建音频流
-        console.log('mic',mic)
         micsource.connect(destination);
         stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         output.addTrack(micsource.mediaStream.getAudioTracks()[0]) //把麦克风声轨传入
         output.addTrack(stream.getVideoTracks()[0]) //把录制视频传入
-        console.log('stream',stream)
         //浏览器打开的流是stream 所以点击浏览器的关闭按钮时候关闭的是 stream 
 
         stream.oninactive = function(){
@@ -102,6 +125,7 @@ async function init() {
 
         videoSrc(output)
     } catch (e) {
+        console.log(e)
         reset()
         changeStart();
     }
@@ -132,7 +156,6 @@ function openRecorder(chunks) {
     tracks.forEach(track => track.stop());
     video.srcObject = null;
     var blob = new Blob(chunks, { 'type': 'video/mp4' });
-    console.log(chunks)
     let myUrl = URL.createObjectURL(blob);
     recorderURL = myUrl
     newwindow = window.open('../html/videoview.html');
