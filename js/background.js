@@ -24,7 +24,7 @@ const changeStart = () => [
 
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.type == "reset") {
+    if (request.type == "reset"){
         reset()
     }
 });
@@ -40,11 +40,10 @@ function getId(){
             action:'getMic'
         },
         res=>{  
-            if(chrome.runtime.lastError){
+            if(chrome.runtime.lastError || res.err){
                 console.log(tabs,'chrome.runtime.lastError')
                 setTimeout(getId,1000)
             }
-            console.log('res',res)
             if(res){
                 micdevices = JSON.parse(res)
                 init(micdevices);
@@ -79,16 +78,18 @@ async function init(micdevices) {
     changeStop();
 
     try {
-        // console.log('micdevices',micdevices)
+        console.log('micdevices',micdevices)
         let constraints = {
             audio:{
-                // deviceId:micdevices[0].deviceId
-                deviceId: "default"
+                deviceId:micdevices[0].deviceId
+                // deviceId: "default"
             }
         }
         let stream;
-        console.log(micdevices)
+        console.log('init micdevices   ',micdevices)
+        // micdevices 正常，但是mic获取报错
         const mic = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('init mic   ',mic)
         micstream = mic;
         micsource = audioCtx.createMediaStreamSource(mic); //创建音频流
         micsource.connect(destination);
@@ -125,7 +126,7 @@ async function init(micdevices) {
 
         videoSrc(output)
     } catch (e) {
-        console.log(e)
+        console.log(e,JSON.stringify(e))
         reset()
         changeStart();
     }

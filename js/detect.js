@@ -26,7 +26,6 @@ async function getSources(){
     });
     const devices = await navigator.mediaDevices.enumerateDevices();
     micdevices = devices.filter(m=>m.kind=='audioinput');
-    console.log(micdevices)
     // port.postMessage({
     //     micdevices:micdevices
     // })
@@ -35,11 +34,19 @@ async function getSources(){
 
 
 chrome.runtime.onMessage.addListener(function(request,sender,sendResponse){
-    console.log("你好你好")
     if(request.action  === 'getMic'){  
-        console.log(micdevices,getSources())
         getSources().then(()=>{
             sendResponse(JSON.stringify(micdevices))
+        }).catch(e=>{
+            console.log(e)
+            Promise.reject(getSources());
+            chrome.runtime.sendMessage({
+                type:'reset'
+            })
+            sendResponse(JSON.stringify({
+                err:'error'
+            }))
+
         })
    
     }
