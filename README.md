@@ -11,3 +11,5 @@
 * detect.js需要向background.js中发送一个信号，在detect.js加载完成后  brower icon变得可点击
 
 * 扩展在chrome://页面无法使用 获取不到id 应增加判断 在这些页面上禁用。
+
+* chrome.runtime.lastError 报错原因 sendMessage 没有sendResponse 或者background.js中sendMessage是向chrome://页面发送。
