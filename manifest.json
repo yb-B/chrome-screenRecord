@@ -17,7 +17,11 @@
         "default_icon":"img/start.png",
         "default_title":"点击即可开始录制"
     },
-    
+    "permissions":[
+        "declarativeContent",
+        "tabs",
+        "activeTab"
+    ],
     "content_scripts": [{
             "matches": ["<all_urls>"],
             "js":["js/detect.js"]
