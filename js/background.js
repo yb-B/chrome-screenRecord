@@ -19,6 +19,8 @@ chrome.runtime.onInstalled.addListener(function callback(){
     // chrome.browserAction.disable();
 })
 
+
+
 // 改变激活的tabs获取
 chrome.tabs.onActivated.addListener(function callback(activeInfo){
     chrome.tabs.getSelected(null, function (tab) {
@@ -53,7 +55,7 @@ var mediaRecorder;
 var isRecord = false;
 var micstream;
 var micsource;
-var micdevices; //content-script获取
+// var micdevices; //content-script获取
 var recorderURL;
 var output = new MediaStream();
 
@@ -79,19 +81,21 @@ function getId(){
         active:true,
         currentWindow:true
     },(tabs)=>{
+        tabId = tabs[0].id
         chrome.tabs.sendMessage(tabs[0].id,{
             action:'getMic'
         },
         res=>{  
-            let timer;
-            if(chrome.runtime.lastError || res.err){
-                console.log(tabs,'chrome.runtime.lastError')
-                timer = setTimeout(getId,1000)
+            res =  JSON.parse(res);
+            if(chrome.runtime.lastError){
+                console.log(chrome.runtime.lastError);
+                reset();
+            }else if(res.err){
+                console.log(res.err);
+                reset();
             }
-            if(res){
-                micdevices = JSON.parse(res);
-                clearTimeout(timer);
-                init(micdevices);
+            else{
+                init(res);
             }
         })
     })
@@ -111,8 +115,9 @@ chrome.browserAction.onClicked.addListener(function () {
 async function init(micdevices) {
     isRecord = !isRecord;
     changeStop();
-
+    console.log(micdevices)
     try {
+
         let constraints = {
             audio:{
                 deviceId:micdevices[0].deviceId
@@ -120,7 +125,9 @@ async function init(micdevices) {
             }
         }
         let stream;
-        // micdevices 正常，但是mic获取报错
+
+        // micdevices 正常，但是mic获取报错 notallowed
+        console.log(micdevices)
         const mic = await navigator.mediaDevices.getUserMedia(constraints);
         console.log('init mic   ',mic)
         micstream = mic;
@@ -224,7 +231,10 @@ function reset(){
     micsource = null;
     recorderURL = null;
     output = new MediaStream();
-    chrome.browserAction.setIcon({ path: './img/start.png' })
-    chrome.browserAction.setTitle({title:"点击即可开始录制"})
+    chrome.browserAction.setIcon({ path: './img/start.png' });
+    chrome.browserAction.setTitle({title:"点击即可开始录制"});
+    chrome.tabs.sendMessage(tabId,{
+        action:'stop'
+    });
 }
 

@@ -26,5 +26,10 @@
             "matches": ["<all_urls>"],
             "js":["js/detect.js"]
     }
-]
+    ],
+    "web_accessible_resources":[
+        "js/background.js",
+        "js/audio.js",
+        "html/audio.html"
+    ]
 }
