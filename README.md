@@ -13,3 +13,10 @@
 * 扩展在chrome://页面无法使用 获取不到id 应增加判断 在这些页面上禁用。
 
 * chrome.runtime.lastError 报错原因 sendMessage 没有sendResponse 或者background.js中sendMessage是向chrome://页面发送。
+
+
+> 2021.3.10
+  * 在非https页面上禁用拓展，但图标在http页面上显示仍然正常没有变成灰色。
+  
+  * 整理代码 
+  
