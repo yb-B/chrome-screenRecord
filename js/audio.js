@@ -55,6 +55,7 @@ chrome.runtime.onMessage.addListener(function(request,sender,sendResponse){
 
     if(request.action === 'stop'){
         console.log('stop')
+        //释放mic权限
         stream.getTracks().forEach((track)=>{
             track.stop();
         })

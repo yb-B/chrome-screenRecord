@@ -1,11 +1,4 @@
 
-function matchHttpsPage(url){
-    if(url){
-        const reg = /(^https:\/\/)|(localhost:\/\/)/
-        return reg.test(url)
-    }
-    return false;
-}
 chrome.runtime.onInstalled.addListener(function callback(){
     chrome.tabs.query({ currentWindow: true }, function gotTabs(tabs) {
         for(let idx = 0;idx<tabs.length;idx++){
@@ -25,6 +18,7 @@ chrome.runtime.onInstalled.addListener(function callback(){
 chrome.tabs.onActivated.addListener(function callback(activeInfo){
     chrome.tabs.getSelected(null, function (tab) {
         if(matchHttpsPage(tab.url)){
+            console.log(tab.url)
             chrome.browserAction.enable(tab.id);
         }else{
             chrome.browserAction.disable(tab.id);
@@ -41,10 +35,15 @@ chrome.tabs.onUpdated.addListener(function callback(tabId,changeInfo,tab){
             chrome.browserAction.disable(tabId);
         }
     }else{
-        chrome.browserAction.disable();
+        chrome.browserAction.disable(tabId);
     }
 })
 
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.type == "reset"){
+        reset()
+    }
+});
 
 const audioCtx = new AudioContext();
 const destination = audioCtx.createMediaStreamDestination();
@@ -61,19 +60,19 @@ var output = new MediaStream();
 
 var tabId; //获取当前打开页面id 
 
+function matchHttpsPage(url){
+    if(url){
+        const reg = /(^https:\/\/)|(^localhost:\/\/)/
+        return reg.test(url)
+    }
+    return false;
+}
+
 const changeStop = () => {
     chrome.browserAction.setIcon({ path: './img/stop.png' })
     chrome.browserAction.setTitle({title:"录制中..."})
 }
 
-
-
-
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    if (request.type == "reset"){
-        reset()
-    }
-});
 
 
 function getId(){
@@ -86,7 +85,7 @@ function getId(){
             action:'getMic'
         },
         res=>{  
-            res =  JSON.parse(res);
+            res = JSON.parse(res);
             if(chrome.runtime.lastError){
                 console.log(chrome.runtime.lastError);
                 reset();
@@ -101,23 +100,33 @@ function getId(){
     })
 }
 
-chrome.browserAction.onClicked.addListener(function () {
+function debounce(fn,deltime = 300){
+    let timer;
+    return function(){
+        let that = this;
+        let args = arguments;
+        if(timer){
+            clearTimeout(timer);
+        }
+        timer = setTimeout(()=>{
+            fn.call(that,...args);
+        },deltime)
+    }
+}
+
+function clickBroserAction() {
     if (!isRecord) {
         return getId();
-        // return init();
     } else {
         return recordStop();
     }
-});
-
-
+}
+chrome.browserAction.onClicked.addListener(debounce(clickBroserAction));
 
 async function init(micdevices) {
     isRecord = !isRecord;
     changeStop();
-    console.log(micdevices)
     try {
-
         let constraints = {
             audio:{
                 deviceId:micdevices[0].deviceId
@@ -125,9 +134,6 @@ async function init(micdevices) {
             }
         }
         let stream;
-
-        // micdevices 正常，但是mic获取报错 notallowed
-        console.log(micdevices)
         const mic = await navigator.mediaDevices.getUserMedia(constraints);
         console.log('init mic   ',mic)
         micstream = mic;
@@ -166,8 +172,6 @@ async function init(micdevices) {
         console.log(e)
         reset()
     }
-
-
 }
 function videoSrc(stream){
     if ("srcObject" in video) {
@@ -177,7 +181,7 @@ function videoSrc(stream){
     }
 }
 function recordStop(){
-    (mediaRecorder.state == 'recording') &&
+    mediaRecorder.state && (mediaRecorder.state == 'recording') &&
      mediaRecorder.stop();
 }
 
@@ -196,17 +200,6 @@ function openRecorder(chunks) {
     recorderURL = myUrl
     newwindow = window.open('../html/videoview.html');
     newwindow.recordedBlob = blob;
-
-    //下载blob只能通过 a标签点击实现
-
-    // var link = document.createElement('a');
-
-    // link.style.display = 'none';
-    // link.href = myUrl;
-    // link.setAttribute('download', 'record.mp4');
-    // document.body.appendChild(link);
-    // link.click();
-
 }
 
 function saveRecorder(recorderURL){
@@ -237,4 +230,3 @@ function reset(){
         action:'stop'
     });
 }
-
