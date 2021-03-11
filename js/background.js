@@ -35,7 +35,9 @@ chrome.tabs.onUpdated.addListener(function callback(tabId,changeInfo,tab){
             chrome.browserAction.disable(tabId);
         }
     }else{
-        chrome.browserAction.disable(tabId);
+        chrome.browserAction.disable(tabId,()=>{
+            console.log('资源加载未完成，已禁用',tab.url)
+        });
     }
 })
 
@@ -140,8 +142,9 @@ async function init(micdevices) {
         micsource = audioCtx.createMediaStreamSource(mic); //创建音频流
         micsource.connect(destination);
         stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-        output.addTrack(micsource.mediaStream.getAudioTracks()[0]) //把麦克风声轨传入
-        output.addTrack(stream.getVideoTracks()[0]) //把录制视频传入
+        // output.addTrack(micsource.mediaStream.getAudioTracks()[0]) //把麦克风声轨传入
+        // output.addTrack(stream.getVideoTracks()[0]) //把录制视频传入
+        stream.addTrack(micsource.mediaStream.getAudioTracks()[0])
         //浏览器打开的流是stream 所以点击浏览器的关闭按钮时候关闭的是 stream 
 
         //让chrome的ui可以关闭录制
@@ -152,7 +155,7 @@ async function init(micdevices) {
         let mediaConstraints = {
             mimeType: 'video/webm;codecs=vp8,opus'
         }
-        mediaRecorder = new MediaRecorder(output, mediaConstraints),
+        mediaRecorder = new MediaRecorder(stream, mediaConstraints),
         mediaRecorder.start();
         mediaRecorder.ondataavailable = function (e) {
             if(e.data && e.data.size >0){
@@ -164,10 +167,14 @@ async function init(micdevices) {
             micstream.getTracks().forEach(function (track) {
                 track.stop();
             });
-            openRecorder(chunks);
+            var tracks = video.srcObject.getVideoTracks();
+            tracks.forEach(track => track.stop());
+            video.srcObject = null;
             reset();
+            openRecorder(chunks);   
+
         };
-        videoSrc(output)
+        videoSrc(stream)  //output
     } catch (e) {
         console.log(e)
         reset()
@@ -182,7 +189,7 @@ function videoSrc(stream){
 }
 function recordStop(){
     mediaRecorder.state && (mediaRecorder.state == 'recording') &&
-     mediaRecorder.stop();
+    mediaRecorder.stop();
 }
 
 /**
@@ -192,26 +199,14 @@ function recordStop(){
  * 打开浏览录制回放的页面 并把Blob的url传过去
  */
 function openRecorder(chunks) {
-    var tracks = video.srcObject.getVideoTracks();
-    tracks.forEach(track => track.stop());
-    video.srcObject = null;
-    var blob = new Blob(chunks, { 'type': 'video/mp4' });
-    let myUrl = URL.createObjectURL(blob);
-    recorderURL = myUrl
+    // var tracks = video.srcObject.getVideoTracks();
+    // tracks.forEach(track => track.stop());
+    // video.srcObject = null;
+    // var blob = new Blob(chunks, { 'type': 'video/mp4' });
+    // let myUrl = URL.createObjectURL(blob);
+    // recorderURL = myUrl
     newwindow = window.open('../html/videoview.html');
-    newwindow.recordedBlob = blob;
-}
-
-function saveRecorder(recorderURL){
-    if(recorderURL){
-        var link = document.createElement('a');
-        link.style.display = 'none';
-        link.href = recorderURL;
-        link.setAttribute('download', 'record.mp4');
-        document.body.appendChild(link);
-        link.click();
-    }
-    reset();
+    newwindow.recordedBlob = chunks;
 }
 
 

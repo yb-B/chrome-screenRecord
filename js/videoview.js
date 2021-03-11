@@ -1,10 +1,18 @@
   const video = document.querySelector('video');
-  const downloadBtn = document.querySelector('.download')
+  const downloadBtn = document.querySelector('.download');
+  const resetBtn = document.querySelector('.download');
 
-    let recorderURL = URL.createObjectURL(recordedBlob);
-    video.src = recorderURL
+  var blobs =recordedBlob; //chuncks[];
 
-    function saveRecorder(recorderURL){
+  let videoBlob = new Blob(blobs,{
+    type: 'video/webm'
+  });
+  console.log(recordedBlob);
+  // let superBuffer = videoBlob.slice(0,videoBlob.size/2);
+  let recorderURL = URL.createObjectURL(videoBlob) 
+  // + '#t=' + recordedBlob.length;
+  video.src = recorderURL
+  function saveRecorder(recorderURL){
         if(recorderURL){
             var link = document.createElement('a');
             link.style.display = 'none';
@@ -15,19 +23,16 @@
         }
     }
 
-    downloadBtn.addEventListener('click',function(){
+  downloadBtn.addEventListener('click',function(){
         saveRecorder(recorderURL);
         URL.revokeObjectURL(recorderURL);
-    })
+        chrome.runtime.sendMessage({
+          type:'reset'
+      })
+  })
 
 
- window.onclose = function(){
-     chrome.runtime.sendMessage({
-         type:'reset'
-     })
- }
-
- video.onloadedmetadata = function() {
+  video.onloadedmetadata = function() {
      //处理video第一次播放duration时Infinity的问题 导致不能拖动进度条 handle chrome's bug
     if (video.duration === Infinity) {
       // set it to bigger than the actual duration 
@@ -46,3 +51,11 @@
     }
   }
 
+  
+
+ 
+  window.onclose = function(){
+    chrome.runtime.sendMessage({
+        type:'reset'
+    })
+}
